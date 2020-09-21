@@ -8,6 +8,7 @@ module.exports = class PastePreview extends Plugin {
       aliases: ["paste-preview", "ppreview"],
       description: "Previews a paste via a link",
       usage: "{c} [ url ]",
+      category: "Util",
       async executor([url]) {
         if (
           !url ||
