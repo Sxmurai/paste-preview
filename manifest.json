@@ -1,7 +1,7 @@
 {
   "name": "Paste Preview",
-  "version": "1.0.0",
-  "description": "Preview paste content via the link.",
+  "version": "1.0.1",
+  "description": "Preview/upload code to your paste service of choice!",
   "author": "aesthetical#2545 (Sxmurai)",
   "license": "MIT"
 }
