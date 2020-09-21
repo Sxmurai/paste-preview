@@ -1,8 +1,27 @@
 const { Plugin } = require("powercord/entities");
-const { get } = require("powercord/http");
+const { get, post } = require("powercord/http");
+
+const { inject, uninject } = require("powercord/injector");
+const { getModule, React } = require("powercord/webpack");
+const { clipboard } = require("electron");
+
+const Settings = require("./Settings");
 
 module.exports = class PastePreview extends Plugin {
-  startPlugin() {
+  async startPlugin() {
+    powercord.api.settings.registerSettings("paste-preview", {
+      category: this.entityID,
+      label: "Paste Preview",
+      render: Settings,
+    });
+
+    const pasteService = this.settings.get(
+      "domain",
+      "https://haste.powercord.dev"
+    );
+
+    this.injectRightClickUpload(pasteService);
+
     powercord.api.commands.registerCommand({
       command: "preview",
       aliases: ["paste-preview", "ppreview"],
@@ -52,5 +71,44 @@ module.exports = class PastePreview extends Plugin {
         }
       },
     });
+  }
+
+  async injectRightClickUpload(pasteService) {
+    const messageMenu = await getModule(
+      (m) => m.default && m.default.displayName === "MessageContextMenu"
+    );
+
+    const menu = await getModule(["MenuItem"]);
+
+    inject("UploadToPasteService", messageMenu, "default", (args, res) => {
+      res.props.children.push(
+        React.createElement(menu.MenuItem, {
+          name: "Upload to Paste Service",
+          id: "upload-to-paste-service",
+          label: "Upload to Paste Service",
+          action: async () => {
+            const { content } = args[0].message;
+
+            try {
+              const { body } = await post(`${pasteService}/documents`).send(
+                content.replace(/```js/, "").replace(/```/, "").trim()
+              );
+
+              clipboard.writeText(`${pasteService}/${body.key}`);
+            } catch (error) {
+              console.error(error);
+            }
+          },
+        })
+      );
+
+      return res;
+    });
+  }
+
+  pluginWillUnload() {
+    powercord.api.commands.unregisterCommand("preview");
+    powercord.api.settings.unregisterSettings("paste-preview");
+    uninject("UploadToPasteService");
   }
 };
