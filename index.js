@@ -91,7 +91,10 @@ module.exports = class PastePreview extends Plugin {
 
             try {
               const { body } = await post(`${pasteService}/documents`).send(
-                content.replace(/```js/, "").replace(/```/, "").trim()
+                content
+                  .replace(/```(.+)?/, "")
+                  .replace(/```/, "")
+                  .trim()
               );
 
               clipboard.writeText(`${pasteService}/${body.key}`);
